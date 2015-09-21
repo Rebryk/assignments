@@ -47,8 +47,8 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         }
     }
 
-    private Node root = null;
-    private  int size = 0;
+    private Node root = new Node();
+    private int size = 0;
 
     @Override
     public boolean add(String element) {
@@ -72,10 +72,6 @@ public class StringSetImpl implements StringSet, StreamSerializable {
 
     @Override
     public boolean contains(String element) {
-        if (root == null) {
-            root = new Node();
-        }
-
         Node curr = root;
         for (int i = 0; i < element.length(); i++) {
             int x = getCode(element.charAt(i));
@@ -96,18 +92,19 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         size--;
         Node curr = root;
         for (int i = 0; i < element.length(); i++) {
-            if (--curr.count == 0) {
-                curr = null;
+            curr.count--;
+            int x = getCode(element.charAt(i));
+            if (curr.to[x].count == 1) {
+                curr.to[x] = null;
                 break;
             } else {
-                curr = curr.to[getCode(element.charAt(i))];
+                curr = curr.to[x];
             }
         }
 
-        if (curr != null && --curr.count != 0) {
+        if (curr != null) {
+            curr.count--;
             curr.term = false;
-        } else {
-            curr = null;
         }
 
         return true;
@@ -120,8 +117,6 @@ public class StringSetImpl implements StringSet, StreamSerializable {
 
     @Override
     public int howManyStartsWithPrefix(String prefix) {
-        if (root == null)
-            return 0;
         Node curr = root;
         for (int i = 0; i < prefix.length(); i++) {
             curr = curr.to[getCode(prefix.charAt(i))];
