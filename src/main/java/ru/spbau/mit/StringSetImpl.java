@@ -144,7 +144,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
             data.data += s + "#";
         }
         for (int i = 0; i < Node.MAXA; ++i) {
-            if (node.to[i] != null) {
+            if (node.to[i] != null && node.to[i].count != 0) {
                 dfs(node.to[i], s + (char)(i), data);
             }
         }

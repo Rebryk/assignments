@@ -38,7 +38,6 @@ public class SerializableStringSetTest {
         assertTrue(newStringSet.contains("cde"));
     }
 
-
     @Test(expected=SerializationException.class)
     public void testSimpleSerializationFails() {
         StringSet stringSet = instance();
