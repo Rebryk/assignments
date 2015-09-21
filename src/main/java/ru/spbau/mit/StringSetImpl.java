@@ -134,9 +134,8 @@ public class StringSetImpl implements StringSet, StreamSerializable {
             if (node.to[i] == null) {
                 continue;
             }
-            data += getChar(i) + serializeNode(node.to[i]);
+            data += getChar(i) + serializeNode(node.to[i]) + "#";
         }
-        data += "#";
         return data;
     }
 
@@ -157,8 +156,9 @@ public class StringSetImpl implements StringSet, StreamSerializable {
             node.term = true;
             node.count = 1;
         }
-        while (isAlpha(data.charAt(p.i))) {
-            int x = getCode(data.charAt(p.i++));
+        while (p.i < data.length() && isAlpha(data.charAt(p.i))) {
+            int x = getCode(data.charAt(p.i));
+            p.i++;
             node.to[x] = deserializeNode(data, p);
             node.count += node.to[x].count;
         }
