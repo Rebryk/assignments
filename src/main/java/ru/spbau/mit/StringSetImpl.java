@@ -10,7 +10,7 @@ import java.util.Scanner;
  */
 public class StringSetImpl implements StringSet, StreamSerializable {
     private class Node {
-        public static final int MAXA = 55;
+        public static final int MAXA = 60;
 
         public Node[] to;
         public boolean term;
