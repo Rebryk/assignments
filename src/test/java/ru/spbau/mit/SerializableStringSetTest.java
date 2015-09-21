@@ -38,6 +38,40 @@ public class SerializableStringSetTest {
         assertTrue(newStringSet.contains("cde"));
     }
 
+    //
+    @Test
+    public void testSimpleSerialization2() {
+
+        StringSet stringSet = instance();
+
+        assertTrue(stringSet.add("a"));
+        assertTrue(stringSet.add("ab"));
+        assertTrue(stringSet.add("abc"));
+        assertTrue(stringSet.add("abcd"));
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        ((StreamSerializable) stringSet).serialize(outputStream);
+
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+        StringSet newStringSet = instance();
+        ((StreamSerializable) newStringSet).deserialize(inputStream);
+
+        assertTrue(newStringSet.remove("a"));
+        assertTrue(newStringSet.remove("ab"));
+        assertTrue(newStringSet.remove("abc"));
+
+        outputStream = new ByteArrayOutputStream();
+        ((StreamSerializable) newStringSet).serialize(outputStream);
+
+        inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+        newStringSet = instance();
+        ((StreamSerializable) newStringSet).deserialize(inputStream);
+
+        assertFalse(newStringSet.remove("abcz"));
+        assertEquals(1, newStringSet.size());
+    }
+    //
+
     @Test(expected=SerializationException.class)
     public void testSimpleSerializationFails() {
         StringSet stringSet = instance();
