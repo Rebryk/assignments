@@ -11,7 +11,7 @@ import java.util.Scanner;
  */
 public class StringSetImpl implements StringSet, StreamSerializable {
     private class Node {
-        public static final int MAXA = 60;
+        public static final int MAXA = 255;
 
         public Node[] to;
         public boolean term;
@@ -21,17 +21,21 @@ public class StringSetImpl implements StringSet, StreamSerializable {
             this.term = false;
             this.count = 0;
             this.to = new Node[MAXA];
+            for (int i = 0; i < Node.MAXA; ++i)
+                this.to[i] = null;
         }
     }
 
+    /*
     private class Pos {
         public int i = 0;
-    }
+    }*/
 
     private boolean isAlpha(char c) {
         return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
     }
 
+    /*
     private int getCode(char c) {
         if (c >= 'a' && c <= 'z') {
             return c - 'a';
@@ -46,7 +50,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         } else {
             return (char)(code + 'A' - 'z');
         }
-    }
+    }*/
 
     private Node root = new Node();
 
@@ -57,7 +61,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
 
         Node curr = root;
         for (int i = 0; i < element.length(); i++) {
-            int x = getCode(element.charAt(i));
+            int x = (int)element.charAt(i);
             curr.count++;
             if (curr.to[x] == null) {
                 curr.to[x] = new Node();
@@ -73,8 +77,8 @@ public class StringSetImpl implements StringSet, StreamSerializable {
     public boolean contains(String element) {
         Node curr = root;
         for (int i = 0; i < element.length(); i++) {
-            int x = getCode(element.charAt(i));
-            if (curr.to[x] == null) {
+            int x = (int)element.charAt(i);
+            if (curr.to[x] == null || curr.to[x].count == 0) {
                 return false;
             }
             curr = curr.to[x];
@@ -91,20 +95,11 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         Node curr = root;
         for (int i = 0; i < element.length(); i++) {
             curr.count--;
-            int x = getCode(element.charAt(i));
-            if (curr.to[x].count == 1) {
-                curr.to[x] = null;
-                return true;
-            } else {
-                curr = curr.to[x];
-            }
+            int x = (int)element.charAt(i);
+            curr = curr.to[x];
         }
-
-        if (curr != null) {
-            curr.count--;
-            curr.term = false;
-        }
-
+        curr.count--;
+        curr.term = false;
         return true;
     }
 
@@ -120,7 +115,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         }
         Node curr = root;
         for (int i = 0; i < prefix.length(); i++) {
-            curr = curr.to[getCode(prefix.charAt(i))];
+            curr = curr.to[(int)prefix.charAt(i)];
         }
         return curr.count;
     }
@@ -150,7 +145,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         }
         for (int i = 0; i < Node.MAXA; ++i) {
             if (node.to[i] != null) {
-                dfs(node.to[i], s + getChar(i), data);
+                dfs(node.to[i], s + (char)(i), data);
             }
         }
     }
