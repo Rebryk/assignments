@@ -10,8 +10,25 @@ import java.util.Scanner;
  * Created by rebryk on 21/09/15.
  */
 public class StringSetImpl implements StringSet, StreamSerializable {
+
+    private int getCode(char c) {
+        if (c <= 'z') {
+            return c - 'a';
+        } else {
+            return c - 'A' + 'z';
+        }
+    }
+
+    private char getChar(int code) {
+        if (code <= 'z' - 'a') {
+            return (char)(code + 'a');
+        } else {
+            return (char)(code + 'A' - 'z');
+        }
+    }
+
     private class Node {
-        public static final int MAXA = 256;
+        public static final int MAXA = 52;
 
         public boolean term = false;
         public int count = 0;
@@ -24,7 +41,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
             }
             for (int i = 0; i < MAXA; i++) {
                 if (to[i] != null) {
-                    data += (char)i + to[i].serialize();
+                    data += getChar(i) + to[i].serialize();
                 }
             }
             return data + "#";
@@ -42,7 +59,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         Node curr = root;
         for (int i = 0; i < element.length(); ++i) {
             curr.count++;
-            int index = (int)element.charAt(i);
+            int index = getCode(element.charAt(i));
             if (curr.to[index] == null) {
                 curr.to[index] = new Node();
             }
@@ -57,7 +74,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
     public boolean contains(String element) {
         Node curr = root;
         for (int i = 0; i < element.length(); i++) {
-            int index = (int) element.charAt(i);
+            int index = getCode(element.charAt(i));
             if (curr.to[index] == null) {
                 return false;
             }
@@ -74,22 +91,15 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         Node curr = root;
         for (int i = 0; i < element.length(); i++) {
             curr.count--;
-            int index = (int) element.charAt(i);
+            int index = getCode(element.charAt(i));
+            if (curr.to[index].count == 1) {
+                curr.to[index] = null;
+                return true;
+            }
             curr = curr.to[index];
         }
         curr.count--;
         curr.term = false;
-
-        // clear memory
-        curr = root;
-        for (int i = 0; i < element.length(); i++) {
-            int index = (int) element.charAt(i);
-            if (curr.to[index].count == 0) {
-                curr.to[index] = null;
-                break;
-            }
-            curr = curr.to[index];
-        }
 
         return true;
     }
@@ -103,7 +113,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
     public int howManyStartsWithPrefix(String prefix) {
         Node curr = root;
         for (int i = 0; i < prefix.length(); i++) {
-            int index = (int) prefix.charAt(i);
+            int index = getCode(prefix.charAt(i));
             if (curr.to[index] == null) {
                 return 0;
             }
@@ -141,8 +151,8 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         }
 
         while (isAlpha(c)) {
-            node.to[(int) c] = deserializeNode(in);
-            node.count += node.to[(int) c].count;
+            node.to[getCode(c)] = deserializeNode(in);
+            node.count += node.to[getCode(c)].count;
             c = readChar(in);
         }
         return node;
