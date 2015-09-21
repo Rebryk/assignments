@@ -12,7 +12,7 @@ import java.util.Scanner;
 public class StringSetImpl implements StringSet, StreamSerializable {
 
     private int getCode(char c) {
-        if (c <= 'z') {
+        if (c >= 'a' && c <= 'z') {
             return c - 'a';
         } else {
             return (c - 'A') + ('z' - 'a');
