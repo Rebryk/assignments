@@ -149,9 +149,9 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         }
     }
 
-    private Node deserializeNode(String data, Pos p) {
+    private Node deserializeNode(String data, Pos p) throws SerializationException  {
         Node node = new Node();
-        if (data.charAt(p.i) == '!') {
+        if (p.i < data.length() && data.charAt(p.i) == '!') {
             p.i++;
             node.term = true;
             node.count = 1;
@@ -162,7 +162,8 @@ public class StringSetImpl implements StringSet, StreamSerializable {
             node.to[x] = deserializeNode(data, p);
             node.count += node.to[x].count;
         }
-        p.i++;
+        if (p.i < data.length())
+            p.i++;
         return node;
     }
 
