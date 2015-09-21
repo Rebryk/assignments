@@ -1,5 +1,6 @@
 package ru.spbau.mit;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -114,12 +115,12 @@ public class StringSetImpl implements StringSet, StreamSerializable {
 
     @Override
     public int howManyStartsWithPrefix(String prefix) {
+        if (!contains(prefix)) {
+            return 0;
+        }
         Node curr = root;
         for (int i = 0; i < prefix.length(); i++) {
             curr = curr.to[getCode(prefix.charAt(i))];
-            if (curr == null) {
-                return 0;
-            }
         }
         return curr.count;
     }
@@ -140,10 +141,13 @@ public class StringSetImpl implements StringSet, StreamSerializable {
     }
 
     @Override
-    public void serialize(OutputStream out) {
-        final PrintStream printStream = new PrintStream(out);
+    public void serialize(OutputStream out) throws SerializationException {
         String data = serializeNode(root);
-        printStream.println(data);
+        try {
+            out.write(data.getBytes());
+        } catch (IOException e) {
+            throw new SerializationException();
+        }
     }
 
     private Node deserializeNode(String data, Pos p) {
@@ -163,12 +167,16 @@ public class StringSetImpl implements StringSet, StreamSerializable {
     }
 
     @Override
-    public void deserialize(InputStream in) {
-        final Scanner reader = new Scanner(in);
-        String data = "";
-        while (reader.hasNext()) {
-            data += reader.next();
+    public void deserialize(InputStream in) throws SerializationException {
+        try {
+            int c = 0;
+            String data = "";
+            while ((c = in.read()) != -1) {
+                data += (char)c;
+            }
+            root = deserializeNode(data, new Pos());
+        } catch (IOException e) {
+            throw new SerializationException();
         }
-        root = deserializeNode(data, new Pos());
     }
 }
