@@ -15,15 +15,15 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         if (c <= 'z') {
             return c - 'a';
         } else {
-            return c - 'A' + 'z' - 'a';
+            return (c - 'A') + ('z' - 'a');
         }
     }
 
     private char getChar(int code) {
-        if (code <= 'z' - 'a') {
+        if (code <= ('z' - 'a')) {
             return (char)(code + 'a');
         } else {
-            return (char)(code + 'A' - 'z' + 'a');
+            return (char)((code + 'A') - ('z' - 'a'));
         }
     }
 
