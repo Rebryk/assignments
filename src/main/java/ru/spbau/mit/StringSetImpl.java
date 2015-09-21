@@ -125,6 +125,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         return curr.count;
     }
 
+    /*
     private String serializeNode(Node node) {
         String data = "";
         if (node.term) {
@@ -137,18 +138,35 @@ public class StringSetImpl implements StringSet, StreamSerializable {
             data += getChar(i) + serializeNode(node.to[i]) + "#";
         }
         return data;
+    }*/
+
+    private class SString {
+        public String data = "";
+    }
+
+    private void dfs(Node node, String s, SString data) {
+        if (node.term) {
+            data.data += s + "#";
+        }
+        for (int i = 0; i < Node.MAXA; ++i) {
+            if (node.to[i] != null) {
+                dfs(node.to[i], s + getChar(i), data);
+            }
+        }
     }
 
     @Override
     public void serialize(OutputStream out) throws SerializationException {
-        String data = serializeNode(root);
+        SString data = new SString();
+        dfs(root, "", data);
         try {
-            out.write(data.getBytes());
+            out.write(data.data.getBytes());
         } catch (IOException e) {
             throw new SerializationException();
         }
     }
 
+    /*
     private Node deserializeNode(String data, Pos p) throws SerializationException  {
         Node node = new Node();
         if (p.i < data.length() && data.charAt(p.i) == '!') {
@@ -165,17 +183,26 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         if (p.i < data.length())
             p.i++;
         return node;
-    }
+    }*/
+
 
     @Override
     public void deserialize(InputStream in) throws SerializationException {
         try {
+            root = new Node();
+
             int c = 0;
-            String data = "";
+            String word = "";
             while ((c = in.read()) != -1) {
-                data += (char)c;
+                char ch = (char)c;
+                if (isAlpha(ch)) {
+                    word += ch;
+                } else {
+                    add(word);
+                    word = "";
+                }
             }
-            root = deserializeNode(data, new Pos());
+            //root = deserializeNode(data, new Pos());
         } catch (IOException e) {
             throw new SerializationException();
         }
