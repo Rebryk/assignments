@@ -15,7 +15,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         if (c <= 'z') {
             return c - 'a';
         } else {
-            return c - 'A' + 'z';
+            return c - 'A' + 'z' - 'a';
         }
     }
 
@@ -23,7 +23,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         if (code <= 'z' - 'a') {
             return (char)(code + 'a');
         } else {
-            return (char)(code + 'A' - 'z');
+            return (char)(code + 'A' - 'z' + 'a');
         }
     }
 
@@ -92,21 +92,14 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         for (int i = 0; i < element.length(); i++) {
             curr.count--;
             int index = getCode(element.charAt(i));
+            if (curr.to[index].count == 1) {
+                curr.to[index] = null;
+                return true;
+            }
             curr = curr.to[index];
         }
         curr.count--;
         curr.term = false;
-
-        // clear memory
-        curr = root;
-        for (int i = 0; i < element.length(); i++) {
-            int index = getCode(element.charAt(i));
-            if (curr.to[index].count == 0) {
-                curr.to[index] = null;
-                break;
-            }
-            curr = curr.to[index];
-        }
 
         return true;
     }
