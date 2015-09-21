@@ -48,14 +48,12 @@ public class StringSetImpl implements StringSet, StreamSerializable {
     }
 
     private Node root = new Node();
-    private int size = 0;
 
     @Override
     public boolean add(String element) {
         if (contains(element))
             return false;
 
-        size++;
         Node curr = root;
         for (int i = 0; i < element.length(); i++) {
             int x = getCode(element.charAt(i));
@@ -89,14 +87,13 @@ public class StringSetImpl implements StringSet, StreamSerializable {
             return false;
         }
 
-        size--;
         Node curr = root;
         for (int i = 0; i < element.length(); i++) {
             curr.count--;
             int x = getCode(element.charAt(i));
             if (curr.to[x].count == 1) {
                 curr.to[x] = null;
-                break;
+                return true;
             } else {
                 curr = curr.to[x];
             }
@@ -112,7 +109,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
 
     @Override
     public int size() {
-        return size;
+        return root.count;
     }
 
     @Override
