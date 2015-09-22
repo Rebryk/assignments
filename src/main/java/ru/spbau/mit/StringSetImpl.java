@@ -3,8 +3,6 @@ package ru.spbau.mit;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintStream;
-import java.util.Scanner;
 
 /**
  * Created by rebryk on 21/09/15.
@@ -26,6 +24,14 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         } else {
             return (char)((code + 'A') - ('z' - 'a'));
         }
+    }
+    
+    private static boolean isAlpha(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+    }
+
+    private static char readChar(InputStream in) throws IOException {
+        return (char) in.read();
     }
 
     private class Node {
@@ -130,14 +136,6 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         } catch (IOException e) {
             throw new SerializationException();
         }
-    }
-
-    private boolean isAlpha(char c) {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-    }
-
-    private char readChar(InputStream in) throws IOException {
-        return (char) in.read();
     }
 
     private Node deserializeNode(InputStream in) throws IOException {
