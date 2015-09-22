@@ -9,9 +9,10 @@ import java.util.Scanner;
 /**
  * Created by rebryk on 21/09/15.
  */
+
 public class StringSetImpl implements StringSet, StreamSerializable {
 
-    private int getCode(char c) {
+    private static int getCode(char c) {
         if (c >= 'a' && c <= 'z') {
             return c - 'a';
         } else {
@@ -19,7 +20,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         }
     }
 
-    private char getChar(int code) {
+    private static char getChar(int code) {
         if (code <= ('z' - 'a')) {
             return (char)(code + 'a');
         } else {
@@ -28,23 +29,24 @@ public class StringSetImpl implements StringSet, StreamSerializable {
     }
 
     private class Node {
-        public static final int MAXA = 52;
+        private static final int ALPHABET_SIZE = 52;
 
-        public boolean term = false;
-        public int count = 0;
-        public Node[] to = new Node[MAXA];
+        private boolean isTerminal = false;
+        private int wordsCount = 0;
+        private Node[] nodeByCharCode = new Node[ALPHABET_SIZE];
 
-        public String serialize() {
-            String data = "";
-            if (this.term) {
-                data += "!";
+        private StringBuilder serialize() {
+            StringBuilder data = new StringBuilder();
+            if (isTerminal) {
+                data.append('!');
             }
-            for (int i = 0; i < MAXA; i++) {
-                if (to[i] != null) {
-                    data += getChar(i) + to[i].serialize();
+            for (int i = 0; i < ALPHABET_SIZE; i++) {
+                if (nodeByCharCode[i] != null) {
+                    data.append(getChar(i));
+                    data.append(nodeByCharCode[i].serialize());
                 }
             }
-            return data + "#";
+            return data.append('#');
         }
     }
 
@@ -58,15 +60,15 @@ public class StringSetImpl implements StringSet, StreamSerializable {
 
         Node curr = root;
         for (int i = 0; i < element.length(); ++i) {
-            curr.count++;
+            curr.wordsCount++;
             int index = getCode(element.charAt(i));
-            if (curr.to[index] == null) {
-                curr.to[index] = new Node();
+            if (curr.nodeByCharCode[index] == null) {
+                curr.nodeByCharCode[index] = new Node();
             }
-            curr = curr.to[index];
+            curr = curr.nodeByCharCode[index];
         }
-        curr.count++;
-        curr.term = true;
+        curr.wordsCount++;
+        curr.isTerminal = true;
         return true;
     }
 
@@ -75,12 +77,12 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         Node curr = root;
         for (int i = 0; i < element.length(); i++) {
             int index = getCode(element.charAt(i));
-            if (curr.to[index] == null) {
+            if (curr.nodeByCharCode[index] == null) {
                 return false;
             }
-            curr = curr.to[index];
+            curr = curr.nodeByCharCode[index];
         }
-        return curr.term;
+        return curr.isTerminal;
     }
 
     @Override
@@ -90,23 +92,23 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         }
         Node curr = root;
         for (int i = 0; i < element.length(); i++) {
-            curr.count--;
+            curr.wordsCount--;
             int index = getCode(element.charAt(i));
-            if (curr.to[index].count == 1) {
-                curr.to[index] = null;
+            if (curr.nodeByCharCode[index].wordsCount == 1) {
+                curr.nodeByCharCode[index] = null;
                 return true;
             }
-            curr = curr.to[index];
+            curr = curr.nodeByCharCode[index];
         }
-        curr.count--;
-        curr.term = false;
+        curr.wordsCount--;
+        curr.isTerminal = false;
 
         return true;
     }
 
     @Override
     public int size() {
-        return root.count;
+        return root.wordsCount;
     }
 
     @Override
@@ -114,19 +116,19 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         Node curr = root;
         for (int i = 0; i < prefix.length(); i++) {
             int index = getCode(prefix.charAt(i));
-            if (curr.to[index] == null) {
+            if (curr.nodeByCharCode[index] == null) {
                 return 0;
             }
-            curr = curr.to[index];
+            curr = curr.nodeByCharCode[index];
         }
-        return curr.count;
+        return curr.wordsCount;
     }
 
     @Override
     public void serialize(OutputStream out) throws SerializationException {
-        String data = root.serialize();
+        StringBuilder data = root.serialize();
         try {
-            out.write(data.getBytes());
+            out.write(data.toString().getBytes());
         } catch (IOException e) {
             throw new SerializationException();
         }
@@ -145,14 +147,14 @@ public class StringSetImpl implements StringSet, StreamSerializable {
 
         char c = readChar(in);
         if (c == '!') {
-            node.count++;
-            node.term = true;
+            node.wordsCount++;
+            node.isTerminal = true;
             c = readChar(in);
         }
 
         while (isAlpha(c)) {
-            node.to[getCode(c)] = deserializeNode(in);
-            node.count += node.to[getCode(c)].count;
+            node.nodeByCharCode[getCode(c)] = deserializeNode(in);
+            node.wordsCount += node.nodeByCharCode[getCode(c)].wordsCount;
             c = readChar(in);
         }
         return node;
