@@ -72,38 +72,43 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         return true;
     }
 
-    @Override
-    public boolean contains(String element) {
+    private Node goDown(String element) {
         Node curr = root;
         for (int i = 0; i < element.length(); i++) {
             int index = getCode(element.charAt(i));
             if (curr.nodeByCharCode[index] == null) {
-                return false;
+                return null;
             }
             curr = curr.nodeByCharCode[index];
         }
-        return curr.isTerminal;
+        return curr;
+    }
+
+    @Override
+    public boolean contains(String element) {
+        Node node = goDown(element);
+        return node != null && node.isTerminal;
     }
 
     @Override
     public boolean remove(String element) {
-        if (!contains(element)) {
+        if (contains(element)) {
+            Node curr = root;
+            for (int i = 0; i < element.length(); i++) {
+                curr.wordsCount--;
+                int index = getCode(element.charAt(i));
+                if (curr.nodeByCharCode[index].wordsCount == 1) {
+                    curr.nodeByCharCode[index] = null;
+                    return true;
+                }
+                curr = curr.nodeByCharCode[index];
+            }
+            curr.wordsCount--;
+            curr.isTerminal = false;
+            return true;
+        } else {
             return false;
         }
-        Node curr = root;
-        for (int i = 0; i < element.length(); i++) {
-            curr.wordsCount--;
-            int index = getCode(element.charAt(i));
-            if (curr.nodeByCharCode[index].wordsCount == 1) {
-                curr.nodeByCharCode[index] = null;
-                return true;
-            }
-            curr = curr.nodeByCharCode[index];
-        }
-        curr.wordsCount--;
-        curr.isTerminal = false;
-
-        return true;
     }
 
     @Override
@@ -113,15 +118,8 @@ public class StringSetImpl implements StringSet, StreamSerializable {
 
     @Override
     public int howManyStartsWithPrefix(String prefix) {
-        Node curr = root;
-        for (int i = 0; i < prefix.length(); i++) {
-            int index = getCode(prefix.charAt(i));
-            if (curr.nodeByCharCode[index] == null) {
-                return 0;
-            }
-            curr = curr.nodeByCharCode[index];
-        }
-        return curr.wordsCount;
+        Node node = goDown(prefix);
+        return node == null ? 0 : node.wordsCount;
     }
 
     @Override
