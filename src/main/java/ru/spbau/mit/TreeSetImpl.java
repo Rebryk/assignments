@@ -41,8 +41,10 @@ public class TreeSetImpl<E> extends AbstractSet<E> {
 
     private class treeIterator implements Iterator<E> {
         private Node<E> currNode;
+        private Node<E> last;
 
         public treeIterator() {
+            last = null;
             currNode = root;
             if (currNode != null) {
                 while (currNode.leftNode != null)
@@ -50,12 +52,17 @@ public class TreeSetImpl<E> extends AbstractSet<E> {
             }
         }
 
-        public void remove() {
+        public void remove() throws IllegalStateException {
+            if (last == null)
+                throw new IllegalStateException();
+            root = erase(root, last);
+            last = null;
         }
 
         public E next() throws NoSuchElementException {
             if (currNode == null)
                 throw new NoSuchElementException();
+            last = currNode;
             E key = currNode.key;
             currNode = nextNode();
             return key;
@@ -63,12 +70,17 @@ public class TreeSetImpl<E> extends AbstractSet<E> {
 
         private Node<E> nextNode() {
             Node<E> next = currNode;
-            while (next != null && next.rightNode == null)
-                next = next.parent;
-            if (next != null) {
+            if (next == null)
+                return next;
+            if (next.rightNode != null) {
                 next = next.rightNode;
                 while (next.leftNode != null)
                     next = next.leftNode;
+            } else {
+                while (next.parent != null && next.parent.rightNode == next)
+                    next = next.parent;
+                if (next != null)
+                    next = next.parent;
             }
             return next;
         }
