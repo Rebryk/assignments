@@ -4,14 +4,14 @@ package ru.spbau.mit;
  * Created by rebryk on 9/29/15.
  */
 public abstract class Predicate<A> extends Function1<A, Boolean> {
-    public static final Predicate ALWAYS_TRUE = new Predicate() {
+    public static final Predicate ALWAYS_TRUE = new Predicate<Object>() {
         @Override
         public Boolean apply(Object x) {
             return true;
         }
     };
 
-    public static final Predicate ALWAYS_FALSE = new Predicate() {
+    public static final Predicate ALWAYS_FALSE = new Predicate<Object>() {
         @Override
         public Boolean apply(Object x) {
             return false;

@@ -51,10 +51,11 @@ public abstract class Collections {
     }
 
     private static <A, B> B foldr(final Function2<? super A, ? super B, ? extends B> function, B value, final Iterator<A> it) {
-        if (it.hasNext())
+        if (it.hasNext()) {
             return function.apply(it.next(), foldr(function, value, it));
-        else
+        } else {
             return value;
+        }
     }
 
     public static <A, B> B foldr(final Function2<? super A, ? super B, ? extends B> function, B value, final Iterable<A> data) {
