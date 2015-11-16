@@ -1,7 +1,5 @@
 package ru.spbau.mit;
 
-import jdk.nashorn.internal.objects.annotations.Setter;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
