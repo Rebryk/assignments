@@ -17,15 +17,12 @@ public class QuizGame implements Game {
     private ArrayList<Question> questions;
     private int currentQuestionIndex;
 
-    private Boolean isStarted;
     private Boolean isStopped;
 
     public QuizGame(GameServer server) {
         this.server = server;
-        this.isStarted = false;
-        this.isStopped = false;
+        this.isStopped = true;
         questions = new ArrayList<Question>();
-        gameThread = new Thread(new QuizRunnable());
     }
 
     public void setDelayUntilNextLetter(Integer delay) {
@@ -45,6 +42,13 @@ public class QuizGame implements Game {
     }
 
     private void nextQuestion() {
+        if (questions.size() == 0) {
+            try {
+                loadQuestions();
+            } catch (FileNotFoundException e) {
+                // do nothing)
+            }
+        }
         currentQuestionIndex = (currentQuestionIndex + 1) % questions.size();
     }
 
@@ -56,22 +60,24 @@ public class QuizGame implements Game {
     public void onPlayerSentMsg(String id, String msg) {
         synchronized (this) {
             if (msg.equals("!start")) {
-                isStopped = false;
-                if (!isStarted) {
+                if (isStopped) {
                     System.out.println("Game: message from " + id + ": " + msg);
-                    isStarted = true;
-                    try {
-                        loadQuestions();
-                    } catch (FileNotFoundException e) {
-                        // do nothing)
+                    if (gameThread != null) {
+                        try {
+                            gameThread.join();
+                        } catch (InterruptedException e) {
+                           // do nothing)
+                        }
                     }
+                    isStopped = false;
+                    gameThread = new Thread(new QuizRunnable());
                     gameThread.start();
                 }
             } else if (msg.equals("!stop")) {
                 System.out.println("Game: message from " + id + ": " + msg);
-                server.broadcast("Game has been stopped by " + id);
-                gameThread.interrupt();
                 isStopped = true;
+                gameThread.interrupt();
+                server.broadcast("Game has been stopped by " + id);
             } else if (msg.equals(getCurrentQuestion().answer)) {
                 System.out.println("Game: message from " + id + ": " + msg);
                 server.broadcast("The winner is " + id);
