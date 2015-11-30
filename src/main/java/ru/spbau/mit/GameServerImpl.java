@@ -44,12 +44,13 @@ public class GameServerImpl implements GameServer {
     public void accept(final Connection connection) {
         synchronized (connections) {
             connections.put(lastId.toString(), connection);
-        }
-        connection.send(lastId.toString());
 
-        Thread connectionThread = new Thread(new ServerRunnable(lastId.toString(), connection));
-        connectionThread.start();
-        ++lastId;
+            connection.send(lastId.toString());
+
+            Thread connectionThread = new Thread(new ServerRunnable(lastId.toString(), connection));
+            connectionThread.start();
+            ++lastId;
+        }
     }
 
     @Override
@@ -64,7 +65,6 @@ public class GameServerImpl implements GameServer {
     @Override
     public void sendTo(String id, String message) {
         synchronized (connections) {
-            System.out.println("Server: sent message '" + message + "' to " + id);
             connections.get(id).send(message);
         }
     }

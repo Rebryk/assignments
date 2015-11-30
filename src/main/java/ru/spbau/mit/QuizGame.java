@@ -41,15 +41,16 @@ public class QuizGame implements Game {
         return questions.get(currentQuestionIndex);
     }
 
-    private void nextQuestion() {
+    private void nextQuestion() throws FileNotFoundException {
         if (questions.size() == 0) {
             try {
                 loadQuestions();
             } catch (FileNotFoundException e) {
-                // do nothing)
+                throw new FileNotFoundException();
             }
+        } else {
+            currentQuestionIndex = (currentQuestionIndex + 1) % questions.size();
         }
-        currentQuestionIndex = (currentQuestionIndex + 1) % questions.size();
     }
 
     @Override
@@ -57,49 +58,41 @@ public class QuizGame implements Game {
     }
 
     @Override
-    public void onPlayerSentMsg(String id, String msg) {
-        synchronized (this) {
-            if (msg.equals("!start")) {
-                if (isStopped) {
-                    System.out.println("Game: message from " + id + ": " + msg);
-                    if (gameThread != null) {
-                        try {
-                            gameThread.join();
-                        } catch (InterruptedException e) {
-                           // do nothing)
-                        }
+    synchronized public void onPlayerSentMsg(String id, String msg) {
+        if (msg.equals("!start")) {
+                if (gameThread != null) {
+                    try {
+                        gameThread.join();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException();
                     }
-                    isStopped = false;
-                    gameThread = new Thread(new QuizRunnable());
-                    gameThread.start();
                 }
-            } else if (msg.equals("!stop")) {
-                System.out.println("Game: message from " + id + ": " + msg);
-                isStopped = true;
-                gameThread.interrupt();
-                server.broadcast("Game has been stopped by " + id);
-            } else if (msg.equals(getCurrentQuestion().answer)) {
-                System.out.println("Game: message from " + id + ": " + msg);
-                server.broadcast("The winner is " + id);
-                gameThread.interrupt();
-            } else {
-                System.out.println("Game: message from " + id + ": " + msg);
-                server.sendTo(id, "Wrong try");
-            }
+                isStopped = false;
+                gameThread = new Thread(new QuizRunnable());
+                gameThread.start();
+        } else if (msg.equals("!stop")) {
+            isStopped = true;
+            gameThread.interrupt();
+            server.broadcast("Game has been stopped by " + id);
+        } else if (msg.equals(getCurrentQuestion().answer)) {
+            server.broadcast("The winner is " + id);
+            gameThread.interrupt();
+        } else {
+            server.sendTo(id, "Wrong try");
         }
     }
 
     private class QuizRunnable implements Runnable {
         @Override
         public void run() {
-            System.out.println("Quiz: started " + Thread.currentThread().getName().toString());
-
             while (!isStopped) {
-                System.out.println("Quiz: new question");
-                nextQuestion();
-                Question question = getCurrentQuestion();
+                try {
+                    nextQuestion();
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException();
+                }
 
-                System.out.println("Quiz: round started: " + question.question + " (" + question.answer.length() + " letters)");
+                Question question = getCurrentQuestion();
                 server.broadcast("New round started: " + question.question + " (" + question.answer.length() + " letters)");
 
                 Boolean stopped = false;
@@ -108,11 +101,9 @@ public class QuizGame implements Game {
                         TimeUnit.MILLISECONDS.sleep(delayUntilNextLetter);
                     } catch (InterruptedException e) {
                         stopped = true;
-                        System.out.println("Quiz: interrupted, letter");
                         break;
                     }
                     if (!Thread.interrupted()) {
-                        System.out.println("Quiz: " + "Current prefix is " + question.answer.substring(0, index + 1));
                         server.broadcast("Current prefix is " + question.answer.substring(0, index + 1));
                     } else {
                         stopped = true;
@@ -127,31 +118,25 @@ public class QuizGame implements Game {
                 try {
                     TimeUnit.MILLISECONDS.sleep(delayUntilNextLetter);
                 } catch (InterruptedException e) {
-                    System.out.println("Quiz: interrupted, end");
                     continue;
                 }
 
                 if (!Thread.interrupted()) {
-                    System.out.println("Quiz: " + "Nobody guessed, the word was " + question.answer);
                     server.broadcast("Nobody guessed, the word was " + question.answer);
                 }
             }
-
-            System.out.println("Quiz: stopped");
         }
     }
 
     private void loadQuestions() throws FileNotFoundException {
         try {
             synchronized (questions) {
-                currentQuestionIndex = -1;
+                currentQuestionIndex = 0;
                 Scanner scanner = new Scanner(new File(dictionaryFilename));
                 while (scanner.hasNext()) {
                     Question question = new Question(scanner.nextLine());
                     questions.add(question);
-                    System.out.println("Game: added (" + question.question + ", " + question.answer + ")");
                 }
-                System.out.println("Game: Read questions.");
             }
         } catch (FileNotFoundException e) {
             throw new FileNotFoundException();
@@ -162,7 +147,7 @@ public class QuizGame implements Game {
         private final String question;
         private final String answer;
 
-        public Question(String string) {
+        private Question(String string) {
             String[] data = string.split(";");
             this.question = data[0];
             this.answer = data[1];
