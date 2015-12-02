@@ -16,9 +16,9 @@ public class Injector {
     private static HashMap<String, Class<?>> classImpl;
     private static HashMap<String, Object> objectByClassName;
 
-    private static Class<?> findClassImplInterface(Class<?> interfaceImpl) throws Exception {
+    private static Class<?> findClassImplInterface(Class<?> interfaceImpl, List<String> implementationClassNames) throws Exception {
         Class<?> type = null;
-        for (Map.Entry<String, Class<?>> entry: classImpl.entrySet()) {
+        /*for (Map.Entry<String, Class<?>> entry: classImpl.entrySet()) {
             if (interfaceImpl.isAssignableFrom(entry.getValue())) {
                 if (type == null) {
                     type = entry.getValue();
@@ -26,11 +26,19 @@ public class Injector {
                     throw new AmbiguousImplementationException();
                 }
             }
-        }
+        }*/
+        for (String impl: implementationClassNames) {
+            if (interfaceImpl.isAssignableFrom(Class.forName(impl))) {
+                if (type == null) {
+                    type = Class.forName(impl);
+                } else {
+                    throw new AmbiguousImplementationException();
+                }
+            }
         return type;
     }
 
-    private static Object initialize(String rootClassName) throws Exception {
+    private static Object initializeObject(String rootClassName, List<String> implementationClassNames) throws Exception {
         if (!classImpl.containsKey(rootClassName)) {
             throw new ImplementationNotFoundException();
         }
@@ -40,7 +48,7 @@ public class Injector {
         }
         classUsed.put(rootClassName, true);
 
-        Class<?> rootClass = classImpl.get(rootClassName);
+        Class<?> rootClass = Class.forName(rootClassName);
         Constructor<?> constructor = rootClass.getConstructors()[0];
         Class<?> types[] = constructor.getParameterTypes();
 
@@ -48,7 +56,7 @@ public class Injector {
         for (int i = 0; i < types.length; i++) {
             Class<?> type = types[i];
             if (types[i].isInterface()) {
-                type = findClassImplInterface(types[i]);
+                type = findClassImplInterface(types[i], implementationClassNames);
                 if (type == null) {
                     throw new ImplementationNotFoundException();
                 }
@@ -56,7 +64,7 @@ public class Injector {
             if (objectByClassName.containsKey(type.getCanonicalName())) {
                 parameters[i] = objectByClassName.get(type.getCanonicalName());
             } else {
-                parameters[i] = initialize(type.getCanonicalName());
+                parameters[i] = initializeObject(type.getCanonicalName(), implementationClassNames);
                 objectByClassName.put(type.getCanonicalName(), parameters[i]);
             }
         }
@@ -75,6 +83,6 @@ public class Injector {
             classImpl.put(className, Class.forName(className));
         }
 
-        return initialize(rootClassName);
+        return initializeObject(rootClassName, implementationClassNames);
     }
 }
