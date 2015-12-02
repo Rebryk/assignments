@@ -16,12 +16,12 @@ public class Injector {
     private static HashMap<String, Class<?>> classImpl;
     private static HashMap<String, Object> objectByClassName;
 
-    private static Class<?> findClassImplInterface(Class<?> interfaceImpl, List<String> implementationClassNames) throws Exception {
+    private static Class<?> findClassImplInterface(Class<?> interfaceImpl) throws Exception {
         Class<?> type = null;
-        for (String impl: implementationClassNames) {
-            if (interfaceImpl.isAssignableFrom(Class.forName(impl))) {
+        for (Map.Entry<String, Class<?>> entry: classImpl.entrySet()) {
+            if (interfaceImpl.isAssignableFrom(entry.getValue())) {
                 if (type == null) {
-                    type = Class.forName(impl);
+                    type = entry.getValue();
                 } else {
                     throw new AmbiguousImplementationException();
                 }
@@ -30,7 +30,7 @@ public class Injector {
         return type;
     }
 
-    private static Object initializeObject(String rootClassName, List<String> implementationClassNames) throws Exception {
+    private static Object initialize(String rootClassName) throws Exception {
         if (!classImpl.containsKey(rootClassName)) {
             throw new ImplementationNotFoundException();
         }
@@ -48,7 +48,7 @@ public class Injector {
         for (int i = 0; i < types.length; i++) {
             Class<?> type = types[i];
             if (types[i].isInterface()) {
-                type = findClassImplInterface(types[i], implementationClassNames);
+                type = findClassImplInterface(types[i]);
                 if (type == null) {
                     throw new ImplementationNotFoundException();
                 }
@@ -56,7 +56,7 @@ public class Injector {
             if (objectByClassName.containsKey(type.getCanonicalName())) {
                 parameters[i] = objectByClassName.get(type.getCanonicalName());
             } else {
-                parameters[i] = initializeObject(type.getCanonicalName(), implementationClassNames);
+                parameters[i] = initialize(type.getCanonicalName());
                 objectByClassName.put(type.getCanonicalName(), parameters[i]);
             }
         }
@@ -75,6 +75,6 @@ public class Injector {
             classImpl.put(className, Class.forName(className));
         }
 
-        return initializeObject(rootClassName, implementationClassNames);
+        return initialize(rootClassName);
     }
 }
