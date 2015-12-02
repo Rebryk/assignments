@@ -7,8 +7,8 @@ import java.util.concurrent.TimeUnit;
 
 
 public class QuizGame implements Game {
-    private Integer delayUntilNextLetter;
-    private Integer maxLettersToOpen;
+    private int delayUntilNextLetter;
+    private int maxLettersToOpen;
     private String dictionaryFilename;
 
     private final GameServer server;
@@ -17,7 +17,7 @@ public class QuizGame implements Game {
     private ArrayList<Question> questions;
     private int currentQuestionIndex;
 
-    private Boolean isStopped;
+    private boolean isStopped;
 
     public QuizGame(GameServer server) {
         this.server = server;
@@ -25,11 +25,11 @@ public class QuizGame implements Game {
         questions = new ArrayList<Question>();
     }
 
-    public void setDelayUntilNextLetter(Integer delay) {
+    public void setDelayUntilNextLetter(int delay) {
         delayUntilNextLetter = delay;
     }
 
-    public void setMaxLettersToOpen(Integer count) {
+    public void setMaxLettersToOpen(int count) {
         maxLettersToOpen = count;
     }
 
@@ -41,13 +41,9 @@ public class QuizGame implements Game {
         return questions.get(currentQuestionIndex);
     }
 
-    private void nextQuestion() throws FileNotFoundException {
+    private void nextQuestion() {
         if (questions.size() == 0) {
-            try {
-                loadQuestions();
-            } catch (FileNotFoundException e) {
-                throw new FileNotFoundException();
-            }
+            loadQuestions();
         } else {
             currentQuestionIndex = (currentQuestionIndex + 1) % questions.size();
         }
@@ -85,34 +81,19 @@ public class QuizGame implements Game {
     private class QuizRunnable implements Runnable {
         @Override
         public void run() {
+            beforeWhile:
             while (!isStopped) {
-                try {
-                    nextQuestion();
-                } catch (FileNotFoundException e) {
-                    throw new RuntimeException();
-                }
-
+                nextQuestion();
                 Question question = getCurrentQuestion();
                 server.broadcast("New round started: " + question.question + " (" + question.answer.length() + " letters)");
 
-                Boolean stopped = false;
                 for (int index = 0; index < maxLettersToOpen; ++index) {
                     try {
                         TimeUnit.MILLISECONDS.sleep(delayUntilNextLetter);
                     } catch (InterruptedException e) {
-                        stopped = true;
-                        break;
+                        continue beforeWhile;
                     }
-                    if (!Thread.interrupted()) {
-                        server.broadcast("Current prefix is " + question.answer.substring(0, index + 1));
-                    } else {
-                        stopped = true;
-                        break;
-                    }
-                }
-
-                if (stopped) {
-                    continue;
+                    server.broadcast("Current prefix is " + question.answer.substring(0, index + 1));
                 }
 
                 try {
@@ -128,7 +109,7 @@ public class QuizGame implements Game {
         }
     }
 
-    private void loadQuestions() throws FileNotFoundException {
+    private void loadQuestions() {
         try {
             synchronized (questions) {
                 currentQuestionIndex = 0;
@@ -139,7 +120,7 @@ public class QuizGame implements Game {
                 }
             }
         } catch (FileNotFoundException e) {
-            throw new FileNotFoundException();
+            throw new AssertionError("File not found!");
         }
     }
 

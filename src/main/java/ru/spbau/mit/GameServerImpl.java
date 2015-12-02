@@ -5,8 +5,8 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 public class GameServerImpl implements GameServer {
+    private final HashMap<String, Connection> connections = new HashMap<String, Connection>();
     private final Game game;
-    private HashMap<String, Connection> connections;
     private Integer lastId;
 
     public GameServerImpl(String gameClassName, Properties properties)
@@ -19,7 +19,7 @@ public class GameServerImpl implements GameServer {
             String setterName = getSetterName(key);
             try {
                 int intValue = Integer.parseInt(stringValue);
-                Method setter = pluginClass.getMethod(setterName, Integer.class);
+                Method setter = pluginClass.getMethod(setterName, int.class);
                 setter.invoke(plugin, intValue);
             } catch (NumberFormatException e) {
                 Method setter = pluginClass.getMethod(setterName, String.class);
@@ -32,31 +32,25 @@ public class GameServerImpl implements GameServer {
         }
 
         game = (Game) plugin;
-        connections = new HashMap<String, Connection>();
         lastId = 0;
     }
 
-    private String getSetterName(String name) {
+    static private String getSetterName(String name) {
         return "set" + name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 
     @Override
-    public void accept(final Connection connection) {
-        synchronized (connections) {
-            connections.put(lastId.toString(), connection);
-
-            connection.send(lastId.toString());
-
-            Thread connectionThread = new Thread(new ServerRunnable(lastId.toString(), connection));
-            connectionThread.start();
-            ++lastId;
-        }
+    public synchronized void accept(final Connection connection) {
+        connections.put(lastId.toString(), connection);
+        connection.send(lastId.toString());
+        new Thread(new ServerRunnable(lastId.toString(), connection)).start();
+        ++lastId;
     }
 
     @Override
     public void broadcast(String message) {
         synchronized (connections) {
-            for (Connection connection: connections.values()) {
+            for (Connection connection : connections.values()) {
                 connection.send(message);
             }
         }
