@@ -25,20 +25,7 @@ public class Injector {
                 } else {
                     throw new AmbiguousImplementationException();
                 }
-                break;
             }
-
-            /*Class<?>[] implClasses = entry.getValue().getClasses();
-            for (Class<?> implClass: implClasses) {
-                if (implClass.getCanonicalName().equals(interfaceName)) {
-                    if (type == null) {
-                        type = implClass;
-                    } else {
-                        throw new AmbiguousImplementationException();
-                    }
-                    break;
-                }
-            }*/
         }
         return type;
     }
@@ -51,6 +38,7 @@ public class Injector {
         if (!classEnabled.get(rootClassName)) {
             throw new ImplementationNotFoundException();
         }
+        classUsed.put(rootClassName, true);
 
         Class<?> rootClass = Class.forName(rootClassName);
         Constructor<?> constructor = rootClass.getConstructors()[0];
@@ -67,9 +55,7 @@ public class Injector {
             }
             parameters[i] = initialize(type.getCanonicalName());
         }
-        Object object = constructor.newInstance(parameters);
-        classUsed.put(rootClassName, true);
-        return object;
+        return constructor.newInstance(parameters);
     }
 
     public static Object initialize(String rootClassName, List<String> implementationClassNames) throws Exception {
@@ -85,7 +71,6 @@ public class Injector {
             classEnabled.put(className, true);
             classImpl.put(className, Class.forName(className));
         }
-
         return initialize(rootClassName);
     }
 }
