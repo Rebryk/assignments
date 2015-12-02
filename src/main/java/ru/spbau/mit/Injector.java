@@ -13,6 +13,7 @@ public class Injector {
      * `implementationClassNames` for concrete dependencies.
      */
     private static HashMap<String, Boolean> classUsed;
+    private static HashMap<String, Class<?>> classImpl;
     private static HashMap<String, Object> objectByClassName;
 
     private static Class<?> findClassImplInterface(Class<?> interfaceImpl, List<String> implementationClassNames) throws Exception {
@@ -30,7 +31,7 @@ public class Injector {
     }
 
     private static Object initializeObject(String rootClassName, List<String> implementationClassNames) throws Exception {
-        if (!classUsed.containsKey(rootClassName)) {
+        if (!classImpl.containsKey(rootClassName)) {
             throw new ImplementationNotFoundException();
         }
 
@@ -39,7 +40,7 @@ public class Injector {
         }
         classUsed.put(rootClassName, true);
 
-        Class<?> rootClass = Class.forName(rootClassName);
+        Class<?> rootClass = classImpl.get(rootClassName);
         Constructor<?> constructor = rootClass.getConstructors()[0];
         Class<?> types[] = constructor.getParameterTypes();
 
@@ -65,10 +66,13 @@ public class Injector {
     public static Object initialize(String rootClassName, List<String> implementationClassNames) throws Exception {
         objectByClassName = new HashMap<String, Object>();
         classUsed = new HashMap<String, Boolean>();
+        classImpl = new HashMap<String, Class<?>>();
 
         classUsed.put(rootClassName, false);
+        classImpl.put(rootClassName, Class.forName(rootClassName));
         for (String className: implementationClassNames) {
             classUsed.put(className, false);
+            classImpl.put(className, Class.forName(className));
         }
 
         return initializeObject(rootClassName, implementationClassNames);
