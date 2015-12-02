@@ -45,14 +45,24 @@ public class Injector {
 
         Object[] parameters = new Object[types.length];
         for (int i = 0; i < types.length; i++) {
-            Class<?> type = types[i];
-            if (types[i].isInterface()) {
-                type = findClassImplInterface(types[i]);
-                if (type == null) {
-                    throw new ImplementationNotFoundException();
+            boolean found = false;
+            for (int j = 0; j < i && !found; ++j) {
+                if (types[i].getCanonicalName().equals(parameters[j].getClass().getCanonicalName())) {
+                    parameters[j] = parameters[i];
+                    found = true;
                 }
             }
-            parameters[i] = initialize(type.getCanonicalName());
+
+            if (!found) {
+                Class<?> type = types[i];
+                if (types[i].isInterface()) {
+                    type = findClassImplInterface(types[i]);
+                    if (type == null) {
+                        throw new ImplementationNotFoundException();
+                    }
+                }
+                parameters[i] = initialize(type.getCanonicalName());
+            }
         }
         return constructor.newInstance(parameters);
     }
