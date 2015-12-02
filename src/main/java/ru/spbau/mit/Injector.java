@@ -44,6 +44,8 @@ public class Injector {
         Constructor<?> constructor = rootClass.getConstructors()[0];
         Class<?> types[] = constructor.getParameterTypes();
 
+        assert(types != null);
+
         Object[] parameters = new Object[types.length];
         for (int i = 0; i < types.length; i++) {
             Class<?> type = types[i];
@@ -66,11 +68,12 @@ public class Injector {
         classUsed.put(rootClassName, false);
         classEnabled.put(rootClassName, true);
         classImpl.put(rootClassName, Class.forName(rootClassName));
-        for (String className: implementationClassNames) {
+        for (String className : implementationClassNames) {
             classUsed.put(className, false);
             classEnabled.put(className, true);
             classImpl.put(className, Class.forName(className));
         }
+
         return initialize(rootClassName);
     }
 }
