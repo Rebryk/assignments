@@ -1,5 +1,7 @@
 package ru.spbau.mit;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
+
 import java.lang.reflect.Constructor;
 import java.util.*;
 
@@ -11,14 +13,15 @@ public class Injector {
      * `implementationClassNames` for concrete dependencies.
      */
     private static HashMap<String, Boolean> classUsed;
+    private static HashMap<String, Class<?>> classImpl;
     private static HashMap<String, Object> objectByClassName;
 
-    private static Class<?> findClassImplInterface(Class<?> interfaceImpl, List<String> implementationClassNames) throws Exception {
+    private static Class<?> findClassImplInterface(Class<?> interfaceImpl) throws Exception {
         Class<?> type = null;
-        for (String implClassName: implementationClassNames) {
-            if (interfaceImpl.isAssignableFrom(Class.forName(implClassName))) {
+        for (Map.Entry<String, Class<?>> entry: classImpl.entrySet()) {
+            if (interfaceImpl.isAssignableFrom(entry.getValue())) {
                 if (type == null) {
-                    type = Class.forName(implClassName);
+                    type = entry.getValue();
                 } else {
                     throw new AmbiguousImplementationException();
                 }
@@ -27,16 +30,17 @@ public class Injector {
         return type;
     }
 
-    private static Object initializeObject(String rootClassName, List<String> implementationClassNames) throws Exception {
-        if (!classUsed.containsKey(rootClassName)) {
+    private static Object initialize(String rootClassName) throws Exception {
+        if (!classImpl.containsKey(rootClassName)) {
             throw new ImplementationNotFoundException();
         }
+
         if (classUsed.get(rootClassName)) {
             throw new InjectionCycleException();
         }
         classUsed.put(rootClassName, true);
 
-        Class<?> rootClass = Class.forName(rootClassName);
+        Class<?> rootClass = classImpl.get(rootClassName);
         Constructor<?> constructor = rootClass.getConstructors()[0];
         Class<?> types[] = constructor.getParameterTypes();
 
@@ -44,7 +48,7 @@ public class Injector {
         for (int i = 0; i < types.length; i++) {
             Class<?> type = types[i];
             if (types[i].isInterface()) {
-                type = findClassImplInterface(types[i], implementationClassNames);
+                type = findClassImplInterface(types[i]);
                 if (type == null) {
                     throw new ImplementationNotFoundException();
                 }
@@ -52,7 +56,7 @@ public class Injector {
             if (objectByClassName.containsKey(type.getCanonicalName())) {
                 parameters[i] = objectByClassName.get(type.getCanonicalName());
             } else {
-                parameters[i] = initializeObject(type.getCanonicalName(), implementationClassNames);
+                parameters[i] = initialize(type.getCanonicalName());
                 objectByClassName.put(type.getCanonicalName(), parameters[i]);
             }
         }
@@ -61,12 +65,16 @@ public class Injector {
 
     public static Object initialize(String rootClassName, List<String> implementationClassNames) throws Exception {
         objectByClassName = new HashMap<String, Object>();
-
         classUsed = new HashMap<String, Boolean>();
+        classImpl = new HashMap<String, Class<?>>();
+
         classUsed.put(rootClassName, false);
+        classImpl.put(rootClassName, Class.forName(rootClassName));
         for (String className: implementationClassNames) {
             classUsed.put(className, false);
+            classImpl.put(className, Class.forName(className));
         }
-        return initializeObject(rootClassName, implementationClassNames);
+
+        return initialize(rootClassName);
     }
 }
