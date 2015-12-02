@@ -14,6 +14,7 @@ public class Injector {
      */
     private static HashMap<String, Boolean> classUsed;
     private static HashMap<String, Class<?>> classImpl;
+    private static HashMap<String, Object> objectByClassName;
 
     private static Class<?> findClassImplInterface(Class<?> interfaceImpl) throws Exception {
         Class<?> type = null;
@@ -45,29 +46,25 @@ public class Injector {
 
         Object[] parameters = new Object[types.length];
         for (int i = 0; i < types.length; i++) {
-            boolean found = false;
-            for (int j = 0; j < i && !found; ++j) {
-                if (types[i].getCanonicalName().equals(parameters[j].getClass().getCanonicalName())) {
-                    parameters[j] = parameters[i];
-                    found = true;
+            Class<?> type = types[i];
+            if (types[i].isInterface()) {
+                type = findClassImplInterface(types[i]);
+                if (type == null) {
+                    throw new ImplementationNotFoundException();
                 }
             }
-
-            if (!found) {
-                Class<?> type = types[i];
-                if (types[i].isInterface()) {
-                    type = findClassImplInterface(types[i]);
-                    if (type == null) {
-                        throw new ImplementationNotFoundException();
-                    }
-                }
+            if (objectByClassName.containsKey(type.getCanonicalName())) {
+                parameters[i] = objectByClassName.get(type.getCanonicalName());
+            } else {
                 parameters[i] = initialize(type.getCanonicalName());
+                objectByClassName.put(type.getCanonicalName(), parameters[i]);
             }
         }
         return constructor.newInstance(parameters);
     }
 
     public static Object initialize(String rootClassName, List<String> implementationClassNames) throws Exception {
+        objectByClassName = new HashMap<String, Object>();
         classUsed = new HashMap<String, Boolean>();
         classImpl = new HashMap<String, Class<?>>();
 
