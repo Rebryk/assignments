@@ -13,7 +13,6 @@ public class Injector {
      * `implementationClassNames` for concrete dependencies.
      */
     private static HashMap<String, Boolean> classUsed;
-    private static HashMap<String, Boolean> classEnabled;
     private static HashMap<String, Class<?>> classImpl;
 
     private static Class<?> findClassImplInterface(Class<?> interfaceImpl) throws Exception {
@@ -31,20 +30,18 @@ public class Injector {
     }
 
     private static Object initialize(String rootClassName) throws Exception {
+        if (!classImpl.containsKey(rootClassName)) {
+            throw new ImplementationNotFoundException();
+        }
+
         if (classUsed.get(rootClassName)) {
             throw new InjectionCycleException();
         }
-
-        if (!classEnabled.get(rootClassName)) {
-            throw new ImplementationNotFoundException();
-        }
         classUsed.put(rootClassName, true);
 
-        Class<?> rootClass = Class.forName(rootClassName);
+        Class<?> rootClass = classImpl.get(rootClassName);
         Constructor<?> constructor = rootClass.getConstructors()[0];
         Class<?> types[] = constructor.getParameterTypes();
-
-        assert(types != null);
 
         Object[] parameters = new Object[types.length];
         for (int i = 0; i < types.length; i++) {
@@ -62,15 +59,12 @@ public class Injector {
 
     public static Object initialize(String rootClassName, List<String> implementationClassNames) throws Exception {
         classUsed = new HashMap<String, Boolean>();
-        classEnabled = new HashMap<String, Boolean>();
         classImpl = new HashMap<String, Class<?>>();
 
         classUsed.put(rootClassName, false);
-        classEnabled.put(rootClassName, true);
         classImpl.put(rootClassName, Class.forName(rootClassName));
-        for (String className : implementationClassNames) {
+        for (String className: implementationClassNames) {
             classUsed.put(className, false);
-            classEnabled.put(className, true);
             classImpl.put(className, Class.forName(className));
         }
 
