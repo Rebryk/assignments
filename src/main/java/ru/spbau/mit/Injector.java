@@ -3,10 +3,7 @@ package ru.spbau.mit;
 import com.sun.org.apache.xpath.internal.operations.Bool;
 
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 
 public class Injector {
@@ -21,7 +18,7 @@ public class Injector {
 
     private static Class<?> findClassImplInterface(Class<?> interfaceImpl) throws Exception {
         Class<?> type = null;
-        for (HashMap.Entry<String, Class<?>> entry : classImpl.entrySet()) {
+        for (Map.Entry<String, Class<?>> entry: classImpl.entrySet()) {
             if (interfaceImpl.isAssignableFrom(entry.getValue())) {
                 if (type == null) {
                     type = entry.getValue();
